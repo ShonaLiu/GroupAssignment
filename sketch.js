@@ -1,4 +1,3 @@
-
 //class for drawing the drawing
 class DrawingBGTeam {
   constructor(x,y) {
@@ -13,19 +12,24 @@ class DrawingBGTeam {
     this.x = constrain(this.x, 0, windowWidth);
     this.y = constrain(this.y, 0, windowHeight);
   
-    let skyImgCol = color(img.get(this.x, this.y));
+    let imgX = floor(map(this.x, 0, windowWidth, 0, img.width));
+    let imgY = floor(map(this.y, 0, windowHeight, 0, img.height));
+
+    let skyImgCol = color(img.get(imgX, imgY));
   
-    // Interpolate the sky color if transitioning
+    // Change the drawing color if transitioning
     if (isTransitioning) {
       transitionProgress += 0.000001; // Adjust the speed of transition
-      transitionProgress = constrain(transitionProgress, 0,0.5); // Clamp between 0 and 1
+      transitionProgress = constrain(transitionProgress, 0,0.5);
+      // change from black to dark blue
       let targetColor = lerpColor(color(0,0,0), color(0,0,139), colAmt);
+      //change the color from the current color to target color
       let currentColor = lerpColor(skyImgCol, targetColor, transitionProgress);
-      pointsBuffer.stroke(currentColor);
+      drawDarkBuffer.stroke(currentColor);
       
     }
-    pointsBuffer.strokeWeight(penSize);
-    pointsBuffer.point(this.x, this.y);
+    drawDarkBuffer.strokeWeight(penSize);
+    drawDarkBuffer.point(this.x, this.y);
   }
   
   
@@ -40,17 +44,17 @@ class DrawingBGTeam {
     let imgY = floor(map(this.y, 0, windowHeight, 0, img.height));
 
     // Update the coverage array
-    let pixelX = floor(this.x / 2) * 2; // Ensure even number
-    let pixelY = floor(this.y / 2) * 2; // Ensure even number
+    let pixelX = floor(this.x / 2) * 2; 
+    let pixelY = floor(this.y / 2) * 2;
+    
     // Ensure pixelX and pixelY are within bounds
-
     if (pixelX >= 0 && pixelX < windowWidth && pixelY >= 0 && pixelY < windowHeight) {
       if (!coverage[pixelX][pixelY]) {
         coverage[pixelX][pixelY] = true;
         coveredPixels++;
-        pointsBuffer.stroke(img.get(imgX, imgY));
-        pointsBuffer.strokeWeight(penSize);
-        pointsBuffer.point(this.x, this.y);
+        drawOriginalBuffer.stroke(img.get(imgX, imgY));
+        drawOriginalBuffer.strokeWeight(penSize);
+        drawOriginalBuffer.point(this.x, this.y);
       }
     }
   }
@@ -86,12 +90,19 @@ class Wave {
       let imgX = floor(map(x, 0, windowWidth, 0, img.width));
 
 
+      // Change the drawing color if transitioning
       if (isTransitioning) {
-        transitionProgress += 0.000001; // Adjust the speed of transition
-        transitionProgress = constrain(transitionProgress, 0, 0.5); // Clamp between 0 and 1
+        // Adjust the speed of transition
+        transitionProgress += 0.000001;
+        // the amount of transition
+        transitionProgress = constrain(transitionProgress, 0, 0.5);
+        // get the picture color of the current point
         let col = img.get(imgX, floor(this.yBase));
+        // change the color from black to dark blue
         let targetColor = lerpColor(color(0,0,0), color(0,0,139), colAmt);
+        // change the current color
         let currentColor = lerpColor(color(col), targetColor, transitionProgress);
+        // change the transparency
         let waveColor = color(red(currentColor), green(currentColor), blue(currentColor), 15);
         stroke(waveColor);
       } else {
@@ -116,11 +127,11 @@ class Wave {
 let waves = [];
 let drawingTeam = [];
 // Number of waves to create
-let numWaves = 10;
+let numWaves = 8;
 
 //We need a variable to hold our image
 let img;
-let skyImg;
+//let skyImg;
 let transitionProgress = 0;
 //lets add a variable to switch between drawing the image and the segments
 let drawSegments = true;
@@ -131,33 +142,32 @@ let penSize;
 // Parameters controlling colour transition changes
 let colAmt = 0;
 let skyPenCol;
-// Two colours for the gradient
-let col1, col2;
 
 // Array to track coverage of the screen
 let coverage;
 let totalPixels;
 let coveredPixels;
-let pointsBuffer;
-let isTransitioning;
+let drawOriginalBuffer;
+let drawDarkBuffer;
+let isTransitioning = false;
+
+let temp = 0;
 //Load the image from disk
 function preload() {
   img = loadImage('1.png');
-  skyImg = loadImage("sky.jpg");
+  //skyImg = loadImage("sky.jpg");
 }
 
 function setup() {
 
   createCanvas(windowWidth, windowHeight);
-  pointsBuffer = createGraphics(windowWidth, windowHeight); 
+  drawOriginalBuffer = createGraphics(windowWidth, windowHeight); 
+  drawDarkBuffer = createGraphics(windowWidth, windowHeight); 
+
+
   penSize = 30;
-
-
-  // Set the two gradient colours 
-  col1 = color("#00FF00");
-  col2 = color("#d0a85c");
-
-  // Create multiple waves with varying properties
+  resetDrawing();
+  // Create multiple waves rwith varying properties
   for (let i = 0; i < numWaves; i++) {
     //We are moving down the screen as we set the yBase for each new wave
     let yBase = (i * height/2 /numWaves+height/2)+100;
@@ -168,14 +178,16 @@ function setup() {
     waves.push(new Wave(amplitude, random(0.01, 0.02), yBase, strokeW));
   }
 
-  
+
+  // 4 drawing points start from different origin
   drawingTeam.push(new DrawingBGTeam(20,20));
   drawingTeam.push(new DrawingBGTeam(20,windowHeight));
   drawingTeam.push(new DrawingBGTeam(windowWidth,20));
   drawingTeam.push(new DrawingBGTeam(width / 2, height / 2));
   drawingTeam.push(new DrawingBGTeam(windowWidth,windowHeight));
 
-  // Initialize the coverage array
+
+  // coverage array for checking if the whole screen is filled
   coverage = [];
   for (let i = 0; i < windowWidth; i += 2) {
     coverage[i] = [];
@@ -199,27 +211,31 @@ function draw() {
     image(img, 0, 0, windowWidth, windowHeight);
   }
 
-  // Draw the points from the buffer onto the main canvas
-  image(pointsBuffer, 0, 0, windowWidth, windowHeight);
+  // Draw original paintings from the buffer onto the main canvas
+  image(drawOriginalBuffer, 0, 0, windowWidth, windowHeight);
+
+  // Draw dark paintings from the buffer onto the main canvas
+  image(drawDarkBuffer, 0, 0, windowWidth, windowHeight);
 
   //draw the image
   push();
-  for (let i = 0; i < 5000; i++) {
+  for (let i = 0; i < 2000; i++) {
+    // check if the whole screen is filled 
     if (allCovered()) {
-      break;
-    }
-    for (let i = 0; i < drawingTeam.length; i++) {
-      drawingTeam[i].drawOriginal();
-    }
-  }
-  for (let i = 0; i < 5000; i++) {
-    for (let i = 0; i < drawingTeam.length; i++) {
-      if (allCovered()) {
-        drawingTeam[i].drawSky();
+      for (let i = 0; i < drawingTeam.length; i++) {
+        if (allCovered()) {
+          // start changing the drawing color
+          drawingTeam[i].drawSky();
+        }
+      }
+    }else{
+      // draw the original painting
+      for (let i = 0; i < drawingTeam.length; i++) {
+        drawingTeam[i].drawOriginal();
       }
     }
+   
   }
-
   pop();
 
 
@@ -235,7 +251,8 @@ function draw() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  pointsBuffer.resizeCanvas(windowWidth, windowHeight);
+  drawOriginalBuffer.resizeCanvas(windowWidth, windowHeight);
+  drawDarkBuffer.resizeCanvas(windowWidth,windowHeight);
   penSize = windowHeight/30;
 
   // Initialize the coverage array
@@ -250,9 +267,6 @@ function windowResized() {
   totalPixels = floor((windowWidth / 2) * (windowHeight / 2));
   coveredPixels = 0;
   
-
-
-
 
   //redraw the waves
   waves = [];
@@ -269,6 +283,8 @@ function windowResized() {
 function keyPressed() {
   if (key == " ") {
     drawSegments = !drawSegments;
+  }else if (key == "r" || key == "R"){
+    resetDrawing();
   }
 } 
 
@@ -278,4 +294,42 @@ function allCovered() {
     isTransitioning = true; // Start the transition
   }
   return coveredPixels === totalPixels;
+}
+
+
+function resetDrawing() {
+  // Reset transition progress
+  transitionProgress = 0;
+  isTransitioning = false;
+
+  drawOriginalBuffer = createGraphics(windowWidth, windowHeight);
+  drawDarkBuffer = createGraphics(windowWidth, windowHeight);
+  // Initialize the coverage array
+  coverage = [];
+  for (let i = 0; i < windowWidth; i += 2) {
+    coverage[i] = [];
+    for (let j = 0; j < windowHeight; j += 2) {
+      coverage[i][j] = false;
+    }
+  }
+
+  totalPixels = floor((windowWidth / 2) * (windowHeight / 2));
+  coveredPixels = 0;
+
+  // Initialize the drawing team
+  drawingTeam = [];
+  drawingTeam.push(new DrawingBGTeam(20, 20));
+  drawingTeam.push(new DrawingBGTeam(20, windowHeight));
+  drawingTeam.push(new DrawingBGTeam(windowWidth, 20));
+  drawingTeam.push(new DrawingBGTeam(width / 2, height / 2));
+  drawingTeam.push(new DrawingBGTeam(windowWidth, windowHeight));
+
+  // Initialize the waves
+  waves = [];
+  for (let i = 0; i < numWaves; i++) {
+    let yBase = (i * height / 2 / numWaves + height / 2) + 100;
+    let amplitude = 20 + i * 10;
+    let strokeW = 5 + i;
+    waves.push(new Wave(amplitude, random(0.01, 0.02), yBase, strokeW));
+  }
 }
