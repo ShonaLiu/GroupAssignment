@@ -151,7 +151,9 @@ let drawOriginalBuffer;
 let drawDarkBuffer;
 let isTransitioning = false;
 
-let temp = 0;
+let forceDark = false;
+
+let magnifierlength
 //Load the image from disk
 function preload() {
   img = loadImage('1.png');
@@ -162,6 +164,7 @@ function setup() {
   drawOriginalBuffer = createGraphics(windowWidth, windowHeight); 
   drawDarkBuffer = createGraphics(windowWidth, windowHeight); 
   penSize = 30;
+  magnifierlength = windowHeight/30;
   resetDrawing();
   // Create multiple waves rwith varying properties
   for (let i = 0; i < numWaves; i++) {
@@ -209,17 +212,18 @@ function draw() {
   // Draw original paintings from the buffer onto the main canvas
   image(drawOriginalBuffer, 0, 0, windowWidth, windowHeight);
   // Draw dark paintings from the buffer onto the main canvas
-  image(drawDarkBuffer, 0, 0, windowWidth, windowHeight);
+  if (isTransitioning) {
+    image(drawDarkBuffer, 0, 0, windowWidth, windowHeight);
+  }
+
   //draw the image
   push();
   for (let i = 0; i < 2000; i++) {
     // check if the whole screen is filled 
-    if (allCovered()) {
+    if (allCovered() || forceDark) {
       for (let i = 0; i < drawingTeam.length; i++) {
-        if (allCovered()) {
           // start changing the drawing color
           drawingTeam[i].drawSky();
-        }
       }
     }else{
       // draw the original painting
@@ -235,6 +239,26 @@ function draw() {
     waves[i].display();
   }
   pop();
+
+  // Calculate the area of the image to be magnified
+  let magnifierX = constrain(mouseX, magnifierlength, width - magnifierlength);
+  let magnifierY = constrain(mouseY, magnifierlength, height - magnifierlength);
+
+  // Draw the magnifier border
+  noFill();
+  stroke(0);
+  strokeWeight(2);
+  rect(magnifierX - magnifierlength, magnifierY - magnifierlength, magnifierlength * 2, magnifierlength * 2);
+
+  // Calculate source coordinates in the original image
+  let srcX = map(mouseX - magnifierlength, 0, width, 0, img.width);
+  let srcY = map(mouseY - magnifierlength, 0, height, 0, img.height);
+  let srcW = map(magnifierlength * 2, 0, width, 0, img.width);
+  let srcH = map(magnifierlength * 2, 0, height, 0, img.height);
+
+  // Draw the magnified section of the original image
+  image(img, magnifierX - magnifierlength, magnifierY - magnifierlength, magnifierlength * 2, magnifierlength * 2, srcX, srcY, srcW, srcH);
+
 }
 
 function windowResized() {
@@ -242,7 +266,8 @@ function windowResized() {
   drawOriginalBuffer.resizeCanvas(windowWidth, windowHeight);
   drawDarkBuffer.resizeCanvas(windowWidth,windowHeight);
   penSize = windowHeight/30;
-
+  magnifierlength = windowHeight/30;
+  forceDark = false;
   // Initialize the coverage array
   coverage = [];
   for (let i = 0; i < windowWidth; i += 2) {
@@ -264,6 +289,7 @@ function windowResized() {
     let strokeW = 5 + i;
     waves.push(new Wave(amplitude, random(0.01, 0.02), yBase, strokeW));
   }
+
 }
 
 
@@ -273,15 +299,32 @@ function keyPressed() {
     drawSegments = !drawSegments;
   }else if (key == "r" || key == "R"){
     resetDrawing();
+  }else if (key === "d" || key === "D") {
+    isTransitioning = true;
+    forceDark = true;
+  } else if (key === "l" || key === "L") {
+    isTransitioning = false;
+    forceDark = false;
+    drawDarkBuffer.clear(); 
+    if (coveredPixels == totalPixels){
+      coveredPixels = 0;
+      coverage = [];
+      for (let i = 0; i < windowWidth; i += 2) {
+        coverage[i] = [];
+        for (let j = 0; j < windowHeight; j += 2) {
+          coverage[i][j] = false;
+        }
+      }
+    }
   }
 } 
 
 // Function to check if all pixels are covered
 function allCovered() {
-  if (coveredPixels === totalPixels) {
+  if (coveredPixels == totalPixels) {
     isTransitioning = true; // Start the transition
   }
-  return coveredPixels === totalPixels;
+  return coveredPixels == totalPixels;
 }
 
 
@@ -289,7 +332,7 @@ function resetDrawing() {
   // Reset transition progress
   transitionProgress = 0;
   isTransitioning = false;
-
+  forceDark = false;
   drawOriginalBuffer = createGraphics(windowWidth, windowHeight);
   drawDarkBuffer = createGraphics(windowWidth, windowHeight);
   // Initialize the coverage array
