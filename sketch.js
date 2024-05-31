@@ -299,10 +299,10 @@ function keyPressed() {
     drawSegments = !drawSegments;
   }else if (key == "r" || key == "R"){
     resetDrawing();
-  }else if (key === "d" || key === "D") {
+  }else if (key == "d" || key == "D") {
     isTransitioning = true;
     forceDark = true;
-  } else if (key === "l" || key === "L") {
+  } else if (key == "l" || key == "L") {
     isTransitioning = false;
     forceDark = false;
     drawDarkBuffer.clear(); 
@@ -322,7 +322,7 @@ function keyPressed() {
 // Function to check if all pixels are covered
 function allCovered() {
   if (coveredPixels == totalPixels) {
-    isTransitioning = true; // Start the transition
+    isTransitioning = true; 
   }
   return coveredPixels == totalPixels;
 }

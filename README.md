@@ -26,10 +26,10 @@ function keyPressed() {
     drawSegments = !drawSegments;
   }else if (key == "r" || key == "R"){
     resetDrawing();
-  }else if (key === "d" || key === "D") {
+  }else if (key == "d" || key == "D") {
     isTransitioning = true;
     forceDark = true;
-  } else if (key === "l" || key === "L") {
+  } else if (key == "l" || key == "L") {
     isTransitioning = false;
     forceDark = false;
     drawDarkBuffer.clear(); 
@@ -51,7 +51,7 @@ function keyPressed() {
 In the draw() function, I calculated the coordination where the original picture needs to be shown, created the boarder and draw the image with all the required parameters. 
 
 ```
-// Calculate the area of the image to be magnified
+  // Calculate the area of the image to be magnified
   let magnifierX = constrain(mouseX, magnifierlength, width - magnifierlength);
   let magnifierY = constrain(mouseY, magnifierlength, height - magnifierlength);
 
@@ -74,7 +74,7 @@ In the draw() function, I calculated the coordination where the original picture
 
 
 ### Technique from the internet:
-**image(img, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight)**
+**image(img, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight)** <br>
 https://p5js.org/reference/#/p5/image <br>
 
 **img**: The image object to be displayed. <br>
