@@ -1,4 +1,4 @@
-//class for drawing the drawing
+//class for drawing the paitning
 class DrawingBGTeam {
   constructor(x,y) {
     this.x = x;
@@ -155,16 +155,12 @@ let temp = 0;
 //Load the image from disk
 function preload() {
   img = loadImage('1.png');
-  //skyImg = loadImage("sky.jpg");
 }
 
 function setup() {
-
   createCanvas(windowWidth, windowHeight);
   drawOriginalBuffer = createGraphics(windowWidth, windowHeight); 
   drawDarkBuffer = createGraphics(windowWidth, windowHeight); 
-
-
   penSize = 30;
   resetDrawing();
   // Create multiple waves rwith varying properties
@@ -210,13 +206,10 @@ function draw() {
   if (!drawSegments) {
     image(img, 0, 0, windowWidth, windowHeight);
   }
-
   // Draw original paintings from the buffer onto the main canvas
   image(drawOriginalBuffer, 0, 0, windowWidth, windowHeight);
-
   // Draw dark paintings from the buffer onto the main canvas
   image(drawDarkBuffer, 0, 0, windowWidth, windowHeight);
-
   //draw the image
   push();
   for (let i = 0; i < 2000; i++) {
@@ -234,19 +227,14 @@ function draw() {
         drawingTeam[i].drawOriginal();
       }
     }
-   
   }
   pop();
-
-
-
   // draw wave
   push();
   for (let i = 0; i < waves.length; i++) {
     waves[i].display();
   }
   pop();
-
 }
 
 function windowResized() {
@@ -281,7 +269,7 @@ function windowResized() {
 
 
 function keyPressed() {
-  if (key == " ") {
+  if (key == "o" || key == "O") {
     drawSegments = !drawSegments;
   }else if (key == "r" || key == "R"){
     resetDrawing();
